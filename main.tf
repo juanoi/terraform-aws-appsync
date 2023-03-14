@@ -227,7 +227,18 @@ resource "aws_appsync_function" "this" {
   data_source      = lookup(each.value, "data_source", null)
   name             = each.key
   description      = lookup(each.value, "description", null)
-  function_version = lookup(each.value, "function_version", "2018-05-29")
+  function_version = try((each.value.runtime.name == "APPSYNC_JS") && (lookup(each.value, "code", null) != null), false) ? null : lookup(each.value, "function_version", "2018-05-29")
+
+  dynamic "runtime" {
+    for_each = try([each.value.runtime], [])
+
+    content {
+      name            = runtime.value.name
+      runtime_version = try(runtime.value.runtime_version, "1.0.0")
+    }
+  }
+
+  code = lookup(each.value, "code", null)
 
   request_mapping_template  = lookup(each.value, "request_mapping_template", null)
   response_mapping_template = lookup(each.value, "response_mapping_template", null)
